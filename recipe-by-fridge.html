@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recipe by Fridge — що приготувати з того, що є</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7F0;
+    --sage:#7C9473;
+    --sage-dark:#5E7555;
+    --terracotta:#D97757;
+    --coral:#E89B7B;
+    --ink:#2C2420;
+    --muted:#8A7E74;
+  }
+  *{font-family:'Inter',system-ui,sans-serif;}
+  h1,h2,.serif{font-family:'Playfair Display',serif;}
+  body{background:var(--cream);color:var(--ink);}
+  .btn-primary{background:var(--sage);color:#fff;transition:all .2s;}
+  .btn-primary:hover{background:var(--sage-dark);transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,148,115,.35);}
+  .btn-outline{border:1.5px solid var(--sage);color:var(--sage);transition:all .2s;}
+  .btn-outline:hover{background:var(--sage);color:#fff;}
+  .card{background:#fff;border:1px solid #EFE7DC;border-radius:20px;transition:all .25s;}
+  .card:hover{transform:translateY(-2px);box-shadow:0 20px 50px rgba(44,36,32,.08);}
+  .chip{background:#F1ECE3;color:var(--ink);padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;}
+  .chip-sage{background:#E8EFE3;color:var(--sage-dark);}
+  .chip-coral{background:#FBE8DE;color:var(--terracotta);}
+  .drop-zone{border:2px dashed #D4C9B8;transition:all .2s;}
+  .drop-zone.dragging{border-color:var(--sage);background:#F3F0E9;}
+  .grad-hero{background:radial-gradient(ellipse at top left,#F7EEDF 0%,transparent 50%),radial-gradient(ellipse at bottom right,#E8EFE3 0%,transparent 50%),var(--cream);}
+  .loader{width:48px;height:48px;border:4px solid #E8EFE3;border-top-color:var(--sage);border-radius:50%;animation:spin .9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .fade-in{animation:fadeIn .5s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .stat-num{font-family:'Playfair Display',serif;font-weight:700;color:var(--sage-dark);}
+  .modal-bg{background:rgba(44,36,32,.4);backdrop-filter:blur(6px);}
+  .recipe-img{background:linear-gradient(135deg,#F7EEDF,#E8EFE3);}
+  .match-bar{height:6px;background:#EFE7DC;border-radius:999px;overflow:hidden;}
+  .match-fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--coral));transition:width .8s ease;}
+  .tag-btn{background:#fff;border:1px solid #EFE7DC;padding:6px 14px;border-radius:999px;font-size:13px;transition:all .15s;}
+  .tag-btn.active{background:var(--sage);color:#fff;border-color:var(--sage);}
+  .tag-btn:hover{border-color:var(--sage);}
+  .tomato{display:inline-block;width:10px;height:10px;background:var(--terracotta);border-radius:50%;margin-right:6px;}
+  details summary::-webkit-details-marker{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-xl bg-[var(--sage)] flex items-center justify-center text-white text-lg">🥗</div>
+    <div>
+      <div class="font-bold text-lg leading-none">Recipe by Fridge</div>
+      <div class="text-[11px] text-[var(--muted)] uppercase tracking-wider">AI-кухня у твоїй кишені</div>
+    </div>
+  </div>
+  <nav class="flex items-center gap-3">
+    <button onclick="scrollTo({top:document.getElementById('app').offsetTop-20,behavior:'smooth'})" class="hidden md:inline text-sm text-[var(--muted)] hover:text-[var(--ink)]">Спробувати</button>
+    <button onclick="openSettings()" class="text-sm px-3 py-2 rounded-lg hover:bg-[#F1ECE3] flex items-center gap-1">⚙️ <span class="hidden md:inline">Налаштування</span></button>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="grad-hero">
+  <div class="max-w-6xl mx-auto px-6 pt-10 pb-16 md:pt-20 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 rounded-full text-xs text-[var(--sage-dark)] font-semibold mb-5 border border-[#E8EFE3]">
+        <span class="w-2 h-2 bg-[var(--sage)] rounded-full animate-pulse"></span>
+        MVP · Powered by GPT-4o Vision
+      </div>
+      <h1 class="text-4xl md:text-6xl leading-tight mb-5">
+        Сфотографуй <span class="italic text-[var(--sage-dark)]">холодильник</span> — отримай вечерю.
+      </h1>
+      <p class="text-lg text-[var(--muted)] mb-8 leading-relaxed">
+        Recipe by Fridge розпізнає продукти на фото й за 10 секунд пропонує 3 рецепти з того, що вже є вдома. Без походу в магазин. Без викинутої їжі.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="document.getElementById('fileInput').click()" class="btn-primary px-6 py-3.5 rounded-xl font-semibold">📸 Завантажити фото</button>
+        <button onclick="runDemo()" class="btn-outline px-6 py-3.5 rounded-xl font-semibold">▶ Демо (без фото)</button>
+      </div>
+      <div class="mt-8 grid grid-cols-3 gap-4 max-w-md">
+        <div><div class="stat-num text-3xl">30%</div><div class="text-xs text-[var(--muted)] mt-1">менше відходів їжі</div></div>
+        <div><div class="stat-num text-3xl">~2400₴</div><div class="text-xs text-[var(--muted)] mt-1">економія на місяць</div></div>
+        <div><div class="stat-num text-3xl">10с</div><div class="text-xs text-[var(--muted)] mt-1">від фото до рецепту</div></div>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="card p-6 shadow-xl">
+        <div class="recipe-img h-64 rounded-2xl flex items-center justify-center text-7xl">🥘</div>
+        <div class="mt-5">
+          <div class="flex gap-2 mb-3">
+            <span class="chip chip-sage">25 хв</span>
+            <span class="chip chip-coral">легко</span>
+            <span class="chip">92% збіг</span>
+          </div>
+          <h3 class="serif text-2xl font-bold mb-2">Паста з куркою і броколі</h3>
+          <p class="text-sm text-[var(--muted)]">У тебе вже є 7 з 8 інгредієнтів. Бракує лише часнику — або можна замінити на цибулю.</p>
+        </div>
+      </div>
+      <div class="absolute -top-5 -right-5 card px-4 py-3 flex items-center gap-2 shadow-lg">
+        <span class="text-xl">✨</span>
+        <div><div class="text-xs text-[var(--muted)]">Розпізнано</div><div class="font-semibold text-sm">12 продуктів</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<section id="app" class="max-w-6xl mx-auto px-6 py-16">
+
+  <!-- Step 1: Upload -->
+  <div id="uploadStep" class="card p-8 md:p-12">
+    <div class="text-center mb-8">
+      <div class="text-xs uppercase tracking-widest text-[var(--sage-dark)] font-semibold mb-2">Крок 1 з 3</div>
+      <h2 class="text-3xl md:text-4xl mb-2">Покажи, що є в холодильнику</h2>
+      <p class="text-[var(--muted)]">Чим більше видно продуктів — тим точніші рецепти</p>
+    </div>
+
+    <div id="dropZone" class="drop-zone rounded-2xl p-10 md:p-16 text-center cursor-pointer"
+         onclick="document.getElementById('fileInput').click()">
+      <div class="text-6xl mb-4">📸</div>
+      <div class="font-semibold text-lg mb-1">Перетягни фото сюди</div>
+      <div class="text-sm text-[var(--muted)] mb-5">або натисни, щоб вибрати файл · JPG, PNG до 10 МБ</div>
+      <button class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold pointer-events-none">Вибрати фото</button>
+      <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(event)">
+    </div>
+
+    <div class="mt-8 text-center">
+      <div class="text-xs text-[var(--muted)] mb-3">або</div>
+      <button onclick="runDemo()" class="btn-outline px-5 py-2.5 rounded-lg text-sm font-semibold">Спробувати з демо-фото</button>
+    </div>
+
+    <!-- Preferences -->
+    <div class="mt-10 pt-8 border-t border-[#EFE7DC]">
+      <div class="text-sm font-semibold mb-3">Уподобання (необов'язково)</div>
+      <div class="flex flex-wrap gap-2 mb-3" id="dietTags">
+        <button class="tag-btn" data-tag="veg">🌱 Вегетаріанське</button>
+        <button class="tag-btn" data-tag="quick">⚡ До 20 хв</button>
+        <button class="tag-btn" data-tag="lowcal">🥗 Низькокалорійне</button>
+        <button class="tag-btn" data-tag="comfort">🍲 Затишне</button>
+        <button class="tag-btn" data-tag="lactose">🚫🥛 Без лактози</button>
+        <button class="tag-btn" data-tag="gluten">🚫🌾 Без глютену</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Loading -->
+  <div id="loadingStep" class="card p-12 text-center hidden">
+    <div class="loader mx-auto mb-6"></div>
+    <h3 class="serif text-2xl mb-2" id="loadingTitle">Аналізую твоє фото...</h3>
+    <p class="text-[var(--muted)]" id="loadingSub">GPT-4o Vision розпізнає продукти</p>
+    <div class="mt-8 max-w-md mx-auto">
+      <div class="flex gap-2 justify-center">
+        <div class="w-2 h-2 bg-[var(--sage)] rounded-full animate-bounce" style="animation-delay:0s"></div>
+        <div class="w-2 h-2 bg-[var(--sage)] rounded-full animate-bounce" style="animation-delay:.15s"></div>
+        <div class="w-2 h-2 bg-[var(--sage)] rounded-full animate-bounce" style="animation-delay:.3s"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Results -->
+  <div id="resultsStep" class="hidden fade-in">
+
+    <div class="grid md:grid-cols-3 gap-6 mb-8">
+      <div class="card p-6 md:col-span-1">
+        <div class="text-xs uppercase tracking-widest text-[var(--muted)] mb-3">Твоє фото</div>
+        <img id="previewImg" class="w-full rounded-xl mb-4" alt="preview"/>
+        <div class="text-xs uppercase tracking-widest text-[var(--muted)] mb-2">Розпізнано</div>
+        <div id="ingredientsList" class="flex flex-wrap gap-2"></div>
+        <button onclick="reset()" class="btn-outline w-full mt-5 px-4 py-2 rounded-lg text-sm font-semibold">📸 Нове фото</button>
+      </div>
+
+      <div class="md:col-span-2">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-[var(--sage-dark)] font-semibold mb-1">Крок 3 з 3</div>
+            <h2 class="text-3xl">Ось що можна приготувати</h2>
+          </div>
+          <div class="text-sm text-[var(--muted)] hidden md:block">Підібрано <span id="recipeCount" class="font-semibold text-[var(--ink)]">3</span> рецепти</div>
+        </div>
+        <div id="recipesGrid" class="space-y-4"></div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="bg-white border-y border-[#EFE7DC]">
+  <div class="max-w-6xl mx-auto px-6 py-20">
+    <div class="text-center mb-12">
+      <div class="text-xs uppercase tracking-widest text-[var(--sage-dark)] font-semibold mb-2">Як це працює</div>
+      <h2 class="text-4xl">Три кроки до вечері</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="text-center p-6">
+        <div class="w-16 h-16 rounded-2xl bg-[#F7EEDF] flex items-center justify-center text-3xl mx-auto mb-4">📸</div>
+        <div class="serif text-xl font-bold mb-2">1. Сфотографуй</div>
+        <p class="text-sm text-[var(--muted)]">Відкрий холодильник і зроби одне фото. AI побачить усе сам.</p>
+      </div>
+      <div class="text-center p-6">
+        <div class="w-16 h-16 rounded-2xl bg-[#E8EFE3] flex items-center justify-center text-3xl mx-auto mb-4">🤖</div>
+        <div class="serif text-xl font-bold mb-2">2. AI думає</div>
+        <p class="text-sm text-[var(--muted)]">GPT-4o Vision розпізнає продукти та підбирає рецепти під твої смаки.</p>
+      </div>
+      <div class="text-center p-6">
+        <div class="w-16 h-16 rounded-2xl bg-[#FBE8DE] flex items-center justify-center text-3xl mx-auto mb-4">🍽️</div>
+        <div class="serif text-xl font-bold mb-2">3. Готуй</div>
+        <p class="text-sm text-[var(--muted)]">Покрокові інструкції, таймери й список того, що треба докупити.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY / METRICS ============ -->
+<section class="max-w-6xl mx-auto px-6 py-20">
+  <div class="grid md:grid-cols-2 gap-12 items-center">
+    <div>
+      <div class="text-xs uppercase tracking-widest text-[var(--sage-dark)] font-semibold mb-2">Навіщо це</div>
+      <h2 class="text-4xl mb-5">Щороку в світі <span class="italic">викидається</span> їжі на $1 трлн</h2>
+      <p class="text-[var(--muted)] mb-6 leading-relaxed">
+        Середня українська сім'я викидає ~17% куплених продуктів — бо забуває, що вже є. Recipe by Fridge перетворює «нічого немає» на «о, є ідея» за одне фото.
+      </p>
+      <ul class="space-y-3">
+        <li class="flex gap-3"><span class="tomato mt-2"></span><div><b>Економія:</b> в середньому 2400₴/міс на сім'ю</div></li>
+        <li class="flex gap-3"><span class="tomato mt-2"></span><div><b>Час:</b> 10 секунд замість 15 хв скролу TikTok-рецептів</div></li>
+        <li class="flex gap-3"><span class="tomato mt-2"></span><div><b>Екологія:</b> -30% харчових відходів на користувача</div></li>
+      </ul>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="card p-6"><div class="stat-num text-4xl">1.4B</div><div class="text-sm text-[var(--muted)] mt-1">тонн їжі викидається щороку</div></div>
+      <div class="card p-6"><div class="stat-num text-4xl">$48B</div><div class="text-sm text-[var(--muted)] mt-1">ринок cooking apps (2027)</div></div>
+      <div class="card p-6"><div class="stat-num text-4xl">73%</div><div class="text-sm text-[var(--muted)] mt-1">міленіалів шукають рецепти онлайн щотижня</div></div>
+      <div class="card p-6"><div class="stat-num text-4xl">4.2x</div><div class="text-sm text-[var(--muted)] mt-1">ROI на GPT-4o vs власна ML-модель</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BUSINESS MODEL ============ -->
+<section class="bg-[#F7EEDF]">
+  <div class="max-w-6xl mx-auto px-6 py-20">
+    <div class="text-center mb-10">
+      <div class="text-xs uppercase tracking-widest text-[var(--sage-dark)] font-semibold mb-2">Бізнес-модель</div>
+      <h2 class="text-4xl">Три потоки доходу</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="card p-7">
+        <div class="text-3xl mb-3">💎</div>
+        <div class="serif text-xl font-bold mb-2">Freemium Premium</div>
+        <div class="stat-num text-3xl mb-1">149₴/міс</div>
+        <p class="text-sm text-[var(--muted)]">Безлімітні фото, персональні плани харчування, збереження історії, експорт у PDF.</p>
+      </div>
+      <div class="card p-7">
+        <div class="text-3xl mb-3">🛒</div>
+        <div class="serif text-xl font-bold mb-2">Партнерство з рітейлом</div>
+        <div class="stat-num text-3xl mb-1">5–8%</div>
+        <p class="text-sm text-[var(--muted)]">«Замовити відсутні інгредієнти» → Rozetka, Сільпо, Glovo. Комісія з кожного замовлення.</p>
+      </div>
+      <div class="card p-7">
+        <div class="text-3xl mb-3">📊</div>
+        <div class="serif text-xl font-bold mb-2">B2B Food-insights</div>
+        <div class="stat-num text-3xl mb-1">$$$</div>
+        <p class="text-sm text-[var(--muted)]">Анонімізовані дані про споживання → FMCG-бренди, аналітичні компанії.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="max-w-4xl mx-auto px-6 py-20 text-center">
+  <h2 class="text-4xl md:text-5xl mb-5">Готовий побачити MVP у дії?</h2>
+  <p class="text-[var(--muted)] mb-8 text-lg">Завантаж фото — і переконайся, що це працює вже сьогодні.</p>
+  <button onclick="scrollTo({top:document.getElementById('app').offsetTop-20,behavior:'smooth'})" class="btn-primary px-8 py-4 rounded-xl font-semibold text-lg">Спробувати зараз →</button>
+</section>
+
+<footer class="border-t border-[#EFE7DC] py-8 text-center text-xs text-[var(--muted)]">
+  © 2026 Recipe by Fridge · MVP · Зроблено з ❤️ в Україні
+</footer>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div id="settingsModal" class="hidden fixed inset-0 modal-bg z-50 flex items-center justify-center p-4">
+  <div class="card p-7 max-w-md w-full">
+    <div class="flex justify-between items-start mb-4">
+      <div>
+        <h3 class="serif text-2xl">Налаштування AI</h3>
+        <p class="text-sm text-[var(--muted)] mt-1">Встав свій OpenAI API ключ для реального розпізнавання</p>
+      </div>
+      <button onclick="closeSettings()" class="text-2xl text-[var(--muted)] hover:text-[var(--ink)]">×</button>
+    </div>
+    <label class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">OpenAI API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-..." class="w-full mt-2 px-4 py-3 rounded-xl border border-[#EFE7DC] focus:outline-none focus:border-[var(--sage)]"/>
+    <p class="text-xs text-[var(--muted)] mt-2">🔒 Ключ зберігається лише в пам'яті браузера до закриття вкладки. Не надсилається нікуди, крім OpenAI.</p>
+
+    <div class="mt-5 pt-5 border-t border-[#EFE7DC]">
+      <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-2">Режим</div>
+      <div class="flex gap-2">
+        <button onclick="setMode('real')" id="modeReal" class="tag-btn flex-1">🤖 Реальний AI</button>
+        <button onclick="setMode('demo')" id="modeDemo" class="tag-btn flex-1 active">✨ Демо-режим</button>
+      </div>
+    </div>
+
+    <button onclick="saveSettings()" class="btn-primary w-full mt-6 px-5 py-3 rounded-xl font-semibold">Зберегти</button>
+  </div>
+</div>
+
+<script>
+  // ===== STATE (in-memory only) =====
+  const state = {
+    apiKey: '',
+    mode: 'demo', // 'demo' or 'real'
+    imageBase64: '',
+    diet: new Set(),
+    ingredients: [],
+    recipes: []
+  };
+
+  // ===== SETTINGS MODAL =====
+  function openSettings(){document.getElementById('settingsModal').classList.remove('hidden');}
+  function closeSettings(){document.getElementById('settingsModal').classList.add('hidden');}
+  function setMode(m){
+    state.mode = m;
+    document.getElementById('modeReal').classList.toggle('active', m==='real');
+    document.getElementById('modeDemo').classList.toggle('active', m==='demo');
+  }
+  function saveSettings(){
+    state.apiKey = document.getElementById('apiKeyInput').value.trim();
+    if(state.apiKey) state.mode = 'real';
+    closeSettings();
+  }
+
+  // ===== DIET TAGS =====
+  document.querySelectorAll('#dietTags .tag-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const t = btn.dataset.tag;
+      if(state.diet.has(t)){state.diet.delete(t);btn.classList.remove('active');}
+      else{state.diet.add(t);btn.classList.add('active');}
+    });
+  });
+
+  // ===== DRAG & DROP =====
+  const dz = document.getElementById('dropZone');
+  ['dragenter','dragover'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.add('dragging');}));
+  ['dragleave','drop'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.remove('dragging');}));
+  dz.addEventListener('drop',ev=>{
+    const f = ev.dataTransfer.files[0];
+    if(f) processFile(f);
+  });
+
+  function handleFile(ev){
+    const f = ev.target.files[0];
+    if(f) processFile(f);
+  }
+
+  function processFile(file){
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.imageBase64 = e.target.result;
+      startAnalysis();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ===== SCREENS =====
+  function showStep(step){
+    ['uploadStep','loadingStep','resultsStep'].forEach(id=>{
+      document.getElementById(id).classList.add('hidden');
+    });
+    document.getElementById(step).classList.remove('hidden');
+  }
+
+  function reset(){
+    state.imageBase64=''; state.ingredients=[]; state.recipes=[];
+    showStep('uploadStep');
+    scrollTo({top:document.getElementById('app').offsetTop-20,behavior:'smooth'});
+  }
+
+  // ===== DEMO DATA =====
+  const DEMO_IMAGE = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="#F7EEDF" width="400" height="300"/><rect x="120" y="70" width="160" height="160" rx="14" fill="#8FA68E" opacity="0.18"/><rect x="140" y="90" width="120" height="40" rx="6" fill="#8FA68E" opacity="0.35"/><rect x="140" y="140" width="120" height="60" rx="6" fill="#D97757" opacity="0.35"/><text x="200" y="255" font-size="18" fill="#8A7E74" text-anchor="middle" font-family="sans-serif" font-weight="600">Демо-холодильник</text></svg>`);
+
+  const DEMO_INGREDIENTS = ['куряче філе','броколі','часник','оливкова олія','сир пармезан','макарони','вершки','яйця','помідори чері','цибуля','морква','лимон'];
+
+  const DEMO_RECIPES = [
+    {
+      name: 'Паста Альфредо з куркою і броколі',
+      emoji: '🍝',
+      time: 25,
+      difficulty: 'легко',
+      match: 92,
+      calories: 520,
+      have: ['куряче філе','броколі','часник','оливкова олія','сир пармезан','макарони','вершки'],
+      missing: ['базилік'],
+      steps: [
+        'Закип\'ятити підсолену воду, додати макарони (8-10 хв).',
+        'Куряче філе нарізати кубиками, обсмажити на оливковій олії 6-7 хв.',
+        'Додати часник і броколі, смажити ще 4 хв.',
+        'Влити вершки, довести до кипіння, додати тертий пармезан.',
+        'Змішати з макаронами, подавати з базиліком (якщо є).'
+      ],
+      why: 'У тебе вже є 7 з 8 інгредієнтів. Ситна вечеря для всієї сім\'ї за 25 хвилин.'
+    },
+    {
+      name: 'Фриттата з помідорами й цибулею',
+      emoji: '🍳',
+      time: 15,
+      difficulty: 'дуже легко',
+      match: 100,
+      calories: 340,
+      have: ['яйця','помідори чері','цибуля','оливкова олія','сир пармезан'],
+      missing: [],
+      steps: [
+        'Розбити 4 яйця, збити з щіпкою солі.',
+        'Цибулю нарізати, обсмажити на оливковій олії 3 хв.',
+        'Додати половинки помідорів чері, смажити ще 2 хв.',
+        'Залити яйцями, посипати тертим сиром.',
+        'Готувати під кришкою на малому вогні 7-8 хв.'
+      ],
+      why: 'Усе є! Ідеально для швидкого сніданку або легкої вечері.'
+    },
+    {
+      name: 'Теплий салат з куркою і лимоном',
+      emoji: '🥗',
+      time: 20,
+      difficulty: 'легко',
+      match: 88,
+      calories: 410,
+      have: ['куряче філе','морква','лимон','оливкова олія','часник'],
+      missing: ['листя салату','горіхи'],
+      steps: [
+        'Курку нарізати смужками, маринувати у соку лимона + олія + часник (5 хв).',
+        'Обсмажити курку 5-6 хв до золотистого кольору.',
+        'Моркву натерти на крупній тертці, додати до курки.',
+        'Викласти на листя салату (за наявності), збризнути лимоном.',
+        'Посипати горіхами для хрусткості.'
+      ],
+      why: 'Легкий, низькокалорійний варіант. Чудово зайде на обід.'
+    }
+  ];
+
+  function runDemo(){
+    state.imageBase64 = DEMO_IMAGE;
+    state.mode = 'demo';
+    startAnalysis();
+  }
+
+  // ===== MAIN ANALYSIS FLOW =====
+  async function startAnalysis(){
+    showStep('loadingStep');
+    document.getElementById('loadingTitle').textContent = 'Аналізую твоє фото...';
+    document.getElementById('loadingSub').textContent = state.mode === 'real' ? 'GPT-4o Vision розпізнає продукти' : 'Демо-режим — використовую приклад';
+
+    try{
+      if(state.mode === 'real' && state.apiKey){
+        await analyzeWithOpenAI();
+      } else {
+        // Demo mode: simulate loading
+        await sleep(1400);
+        state.ingredients = DEMO_INGREDIENTS.slice(0, 7 + Math.floor(Math.random()*4));
+        document.getElementById('loadingTitle').textContent = 'Підбираю рецепти...';
+        document.getElementById('loadingSub').textContent = 'Враховую твої вподобання';
+        await sleep(1200);
+        state.recipes = DEMO_RECIPES;
+      }
+      renderResults();
+    } catch(err){
+      console.error(err);
+      alert('Помилка: ' + err.message + '\n\nПеремикаюся на демо-режим.');
+      state.ingredients = DEMO_INGREDIENTS;
+      state.recipes = DEMO_RECIPES;
+      renderResults();
+    }
+  }
+
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+  // ===== OPENAI API =====
+  async function analyzeWithOpenAI(){
+    // Step 1: Vision — recognize ingredients
+    const visionResp = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+      body: JSON.stringify({
+        model:'gpt-4o',
+        messages:[{
+          role:'user',
+          content:[
+            {type:'text', text:'Проаналізуй це фото холодильника/продуктів. Поверни ЛИШЕ JSON-масив назв продуктів українською мовою, без жодних пояснень. Формат: ["продукт1","продукт2",...]. Максимум 15 продуктів.'},
+            {type:'image_url', image_url:{url: state.imageBase64}}
+          ]
+        }],
+        max_tokens: 400
+      })
+    });
+    if(!visionResp.ok){
+      const err = await visionResp.json();
+      throw new Error(err.error?.message || 'Vision API error');
+    }
+    const visionData = await visionResp.json();
+    let raw = visionData.choices[0].message.content.trim();
+    // Strip markdown fences if any
+    raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
+    state.ingredients = JSON.parse(raw);
+
+    // Step 2: Generate recipes
+    document.getElementById('loadingTitle').textContent = 'Підбираю рецепти...';
+    document.getElementById('loadingSub').textContent = 'Враховую твої вподобання';
+
+    const dietPrefs = Array.from(state.diet).join(', ') || 'без особливих обмежень';
+    const recipeResp = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+      body: JSON.stringify({
+        model:'gpt-4o',
+        response_format: {type:'json_object'},
+        messages:[{
+          role:'system',
+          content:'Ти — AI-шеф-кухар. Повертай ЛИШЕ валідний JSON.'
+        },{
+          role:'user',
+          content: `На основі цих продуктів: ${state.ingredients.join(', ')}. Вподобання: ${dietPrefs}. Запропонуй 3 рецепти. Формат: {"recipes":[{"name":"...","emoji":"🍝","time":25,"difficulty":"легко","match":92,"calories":520,"have":["..."],"missing":["..."],"steps":["крок1","крок2",...],"why":"коротке пояснення чому саме цей рецепт"}]}. Українською.`
+        }],
+        max_tokens: 2000
+      })
+    });
+    if(!recipeResp.ok){
+      const err = await recipeResp.json();
+      throw new Error(err.error?.message || 'Recipe API error');
+    }
+    const recipeData = await recipeResp.json();
+    const parsed = JSON.parse(recipeData.choices[0].message.content);
+    state.recipes = parsed.recipes;
+  }
+
+  // ===== RENDER RESULTS =====
+  function renderResults(){
+    document.getElementById('previewImg').src = state.imageBase64;
+    const ingEl = document.getElementById('ingredientsList');
+    ingEl.innerHTML = state.ingredients.map(i=>`<span class="chip chip-sage">${i}</span>`).join('');
+    document.getElementById('recipeCount').textContent = state.recipes.length;
+
+    const grid = document.getElementById('recipesGrid');
+    grid.innerHTML = state.recipes.map((r,idx)=>`
+      <div class="card p-6 fade-in" style="animation-delay:${idx*.1}s">
+        <div class="flex gap-5">
+          <div class="recipe-img w-28 h-28 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0">${r.emoji||'🍽️'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <h3 class="serif text-xl md:text-2xl font-bold leading-tight">${r.name}</h3>
+              <span class="chip chip-sage whitespace-nowrap">${r.match}% збіг</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="chip">⏱ ${r.time} хв</span>
+              <span class="chip">👩‍🍳 ${r.difficulty}</span>
+              ${r.calories?`<span class="chip">🔥 ~${r.calories} ккал</span>`:''}
+            </div>
+            <p class="text-sm text-[var(--muted)] mb-3">${r.why||''}</p>
+            <div class="match-bar mb-4"><div class="match-fill" style="width:${r.match}%"></div></div>
+            <details>
+              <summary class="cursor-pointer text-sm font-semibold text-[var(--sage-dark)] hover:underline select-none">Показати рецепт →</summary>
+              <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div class="font-semibold mb-2 text-xs uppercase tracking-wider text-[var(--muted)]">У тебе є:</div>
+                  <ul class="space-y-1">${(r.have||[]).map(h=>`<li>✅ ${h}</li>`).join('')}</ul>
+                  ${(r.missing||[]).length?`<div class="font-semibold mt-3 mb-2 text-xs uppercase tracking-wider text-[var(--muted)]">Докупити:</div><ul class="space-y-1">${r.missing.map(m=>`<li>🛒 ${m}</li>`).join('')}</ul>`:''}
+                </div>
+                <div>
+                  <div class="font-semibold mb-2 text-xs uppercase tracking-wider text-[var(--muted)]">Кроки:</div>
+                  <ol class="space-y-2 list-decimal list-inside">${(r.steps||[]).map(s=>`<li>${s}</li>`).join('')}</ol>
+                </div>
+              </div>
+              ${(r.missing||[]).length?`<button class="btn-outline mt-4 px-4 py-2 rounded-lg text-sm font-semibold">🛒 Замовити відсутнє в Сільпо</button>`:''}
+            </details>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    showStep('resultsStep');
+    scrollTo({top:document.getElementById('app').offsetTop-20,behavior:'smooth'});
+  }
+
+  // ===== INIT =====
+  setMode('demo');
+</script>
+
+</body>
+</html>
